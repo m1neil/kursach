@@ -754,7 +754,7 @@ class Company:
         Button(
             regis.root,
             text="Вернуться в меню",
-            command=lambda this_window=regis: self.close_window(this_window, title, question),
+            command=lambda this_window=regis: self.close_win.close_window(this_window, title, question),
         ).place(relx=0.63, rely=0.58, anchor=CENTER)
 
     def clear(self, entries=[]):
@@ -855,17 +855,6 @@ class Company:
                 self.database.close()
         else:
             messagebox.showwarning("Данные", "Не все данные заполнены!")
-
-    def close_window(self, this_window, title, question):
-        if messagebox.askyesno(title, question):
-            self.window.root.deiconify()
-            this_window.root.destroy()
-
-    def close_and_show_another_window(self, close, show, frame_clear=Entry):
-        if type(frame_clear) == Entry:
-            frame_clear.delete(0, END)
-        show.root.deiconify()
-        close.root.destroy()
 
     def check_phone(self, testS=str, validSymbols=str()):
         flag = True

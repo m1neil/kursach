@@ -20,3 +20,8 @@ class Close_window:
         self.simple_close_window(profile)
         self.simple_close_window(client_area_window)
         self.main_window.root.deiconify()
+
+    def close_window(self, this_window, title, question):
+        if messagebox.askyesno(title, question):
+            self.main_window.root.deiconify()
+            this_window.root.destroy()
