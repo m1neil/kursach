@@ -7,6 +7,7 @@ from child_window import Child_window
 from client import Client
 from close_window import Close_window
 from user_data import User_data
+from card import Card
 import sqlite3
 import hashlib
 
@@ -40,18 +41,12 @@ class Company:
         self.database.commit()
         self.cursor.close()
         self.database.close()
-        self.card_database = sqlite3.connect("databases/cards.db")
-        self.card_cursor = self.card_database.cursor()
         card_query = """CREATE TABLE IF NOT EXISTS users_cards (
             number_card INT,
             balanse FLOAT,
             password INT
         )"""
-        self.card_database.execute(card_query)
-        self.card_database.commit()
-        self.card_cursor.close()
-        self.card_database.close()
-
+        self.card_database = Card("databases/cards.db", card_query)
         self.credittime_money_db = sqlite3.connect("databases/creditTime.db")
         self.creditTime_cursor = self.credittime_money_db.cursor()
         self.credittime_money_db.execute(
@@ -66,7 +61,6 @@ class Company:
         self.credittime_money_db.commit()
         self.creditTime_cursor.close()
         self.credittime_money_db.close()
-
         self.counter_show_info_about_credit = 0
 
     # Start main cycle
@@ -227,8 +221,8 @@ class Company:
         frame_btn = Frame(win_return_credit.root)
         frame_btn.pack()
         try:
-            self.card_database = sqlite3.connect("databases/cards.db")
-            self.card_cursor = self.card_database.cursor()
+            self.card_database.set_card_database(sqlite3.connect("databases/cards.db"))
+            self.card_database.set_card_cursor(self.card_database.get_card_database().cursor())
             Label(frame_main_title, text="Возврат кредита", relief=RAISED, bd=3, font=("", 18), padx=30).pack(pady=(30, 20))
             Label(
                 frame_return_credit,
@@ -245,8 +239,8 @@ class Company:
             print(er.with_traceback())
             messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
         finally:
-            self.card_cursor.close()
-            self.card_database.close()
+            self.card_database.close_card_cursor()
+            self.card_database.close_card_database()
         win_return_credit.focus()
 
     # Pay credit
@@ -260,7 +254,7 @@ class Company:
         frame_password_card.pack()
         frame_balanse_card = Frame(win_pay_credit.root)
         frame_balanse_card.pack()
-        Label(frame_main_title, text="Карта", relief=RAISED, bd=3, font=("", 14), padx=30).pack(pady=(20, 15))  # Заголовок
+        Label(frame_main_title, text="Оплата", relief=RAISED, bd=3, font=("", 14), padx=30).pack(pady=(20, 15))  # Заголовок
         Label(frame_number_card, text=f"Номер карты:", font=("", 10), padx=30).pack(pady=(0, 5))
         number_card = Entry(frame_number_card)
         number_card.pack()
@@ -278,8 +272,8 @@ class Company:
             try:
                 self.database = sqlite3.connect("databases/clients.db")
                 self.cursor = self.database.cursor()
-                self.card_database = sqlite3.connect("databases/cards.db")
-                self.card_cursor = self.card_database.cursor()
+                self.card_database.set_card_database(sqlite3.connect("databases/cards.db"))
+                self.card_database.set_card_cursor(self.card_database.get_card_database().cursor())
                 self.credittime_money_db = sqlite3.connect("databases/creditTime.db")
                 self.creditTime_cursor = self.credittime_money_db.cursor()
                 if (
@@ -290,26 +284,32 @@ class Company:
                 ):
                     messagebox.showwarning("Предупреждение", "Не корректные данные")
                 else:
-                    self.card_cursor.execute("SELECT number_card FROM users_cards WHERE number_card = ?", [int(number_card.get())])
-                    if self.card_cursor.fetchone() is None:
+                    self.card_database.get_card_cursor().execute("SELECT number_card FROM users_cards WHERE number_card = ?", [int(number_card.get())])
+                    if self.card_database.get_card_cursor().fetchone() is None:
                         messagebox.showerror("Предупреждение", "Такого номера карыт нет!")
                     else:
-                        self.card_cursor.execute("SELECT password FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())])
-                        if self.card_cursor.fetchone() is None:
+                        self.card_database.get_card_cursor().execute(
+                            "SELECT password FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())]
+                        )
+                        if self.card_database.get_card_cursor().fetchone() is None:
                             messagebox.showerror("Предупреждение", "Не верный пароль")
                         else:
-                            balanse = self.card_cursor.execute(
-                                "SELECT balanse FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())]
-                            ).fetchone()[0]
+                            balanse = (
+                                self.card_database.get_card_cursor()
+                                .execute("SELECT balanse FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())])
+                                .fetchone()[0]
+                            )
                             total_sum_credit = self.user.get_credit() + self.user.get_sum_use_credit()
                             if balanse >= total_sum_credit:
-                                self.card_cursor.execute("UPDATE users_cards SET balanse = balanse - ? WHERE number_card = ?", [float(total_sum_credit), int(number_card.get())])
+                                self.card_database.get_card_cursor().execute(
+                                    "UPDATE users_cards SET balanse = balanse - ? WHERE number_card = ?", [float(total_sum_credit), int(number_card.get())]
+                                )
                                 self.creditTime_cursor.execute("UPDATE creditTime SET balanse = balanse + ? WHERE login = ?", [total_sum_credit, "admin"])
                                 self.cursor.execute("UPDATE users SET credit = ? WHERE id = ?", [0, self.user.get_id()])
                                 self.cursor.execute("UPDATE users SET sum_use_credit = ? WHERE id = ?", [0, self.user.get_id()])
                                 self.cursor.execute("UPDATE users SET credit_days = ? WHERE id = ?", ["0", self.user.get_id()])
                                 self.cursor.execute("UPDATE users SET regular_client = ? WHERE id = ?", [1, self.user.get_id()])
-                                self.card_database.commit()
+                                self.card_database.get_card_database().commit()
                                 self.credittime_money_db.commit()
                                 self.database.commit()
                                 self.user.set_credit(0.0)
@@ -328,8 +328,8 @@ class Company:
             finally:
                 self.cursor.close()
                 self.database.close()
-                self.card_cursor.close()
-                self.card_database.close()
+                self.card_database.close_card_cursor()
+                self.card_database.close_card_database()
                 self.creditTime_cursor.close()
                 self.credittime_money_db.close()
 
@@ -422,8 +422,8 @@ class Company:
             messagebox.showwarning("Предупреждение", "Пустые поля!")
         else:
             try:
-                self.card_database = sqlite3.connect("databases/cards.db")
-                self.card_cursor = self.card_database.cursor()
+                self.card_database.set_card_database(sqlite3.connect("databases/cards.db"))
+                self.card_database.set_card_cursor(self.card_database.get_card_database().cursor())
                 if (
                     not self.data_user.is_number(number_card.get())
                     or not self.data_user.is_int(number_card.get())
@@ -432,35 +432,39 @@ class Company:
                 ):
                     messagebox.showwarning("Предупреждение", "Не корректные данные")
                 else:
-                    self.card_cursor.execute("SELECT number_card FROM users_cards WHERE number_card = ?", [int(number_card.get())])
-                    if self.card_cursor.fetchone() is None:
+                    self.card_database.get_card_cursor().execute("SELECT number_card FROM users_cards WHERE number_card = ?", [int(number_card.get())])
+                    if self.card_database.get_card_cursor().fetchone() is None:
                         messagebox.showerror("Предупреждение", "Такого номера карыт нет!")
                     else:
-                        self.card_cursor.execute("SELECT password FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())])
-                        if self.card_cursor.fetchone() is None:
+                        self.card_database.get_card_cursor().execute(
+                            "SELECT password FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())]
+                        )
+                        if self.card_database.get_card_cursor().fetchone() is None:
                             messagebox.showerror("Предупреждение", "Не верный пароль")
                         else:
                             self.user.set_number_card(int(number_card.get()))
                             self.user.set_password_card(int(password_card.get()))
-                            balanse = self.card_cursor.execute(
-                                "SELECT balanse FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())]
-                            ).fetchone()[0]
+                            balanse = (
+                                self.card_database.get_card_cursor()
+                                .execute("SELECT balanse FROM users_cards WHERE number_card = ? AND password = ?", [int(number_card.get()), int(password_card.get())])
+                                .fetchone()[0]
+                            )
                             money = f"Баланс на карте: {balanse} грн."
                             label_balanse["text"] = money
             except sqlite3.Error as er:
                 print(er.with_traceback())
                 messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
             finally:
-                self.card_cursor.close()
-                self.card_database.close()
+                self.card_database.close_card_cursor()
+                self.card_database.close_card_database()
 
     def info_about_card(self, profile=Child_window):
         win_info_card = Child_window(profile.root, "Инфо. о карте", 250, 170, 800, 350, "icon/credit.ico")
         try:
-            self.card_database = sqlite3.connect("databases/cards.db")
-            self.card_cursor = self.card_database.cursor()
-            number_card = self.card_cursor.execute("SELECT number_card FROM users_cards WHERE number_card = ?", [self.user.get_id()]).fetchone()[0]
-            password_card = self.card_cursor.execute("SELECT password FROM users_cards WHERE number_card = ?", [self.user.get_id()]).fetchone()[0]
+            self.card_database.set_card_database(sqlite3.connect("databases/cards.db"))
+            self.card_database.set_card_cursor(self.card_database.get_card_database().cursor())
+            number_card = self.card_database.get_card_cursor().execute("SELECT number_card FROM users_cards WHERE number_card = ?", [self.user.get_id()]).fetchone()[0]
+            password_card = self.card_database.get_card_cursor().execute("SELECT password FROM users_cards WHERE number_card = ?", [self.user.get_id()]).fetchone()[0]
             Label(win_info_card.root, text="Карта", relief=RAISED, bd=3, font=("", 14), padx=30).pack(pady=(20, 15))  # Заголовок
             Label(win_info_card.root, text=f"Номер карты: {number_card}", font=("", 10), padx=30).pack(pady=(0, 5))
             Label(win_info_card.root, text=f"Пароль: {password_card}", font=("", 10), padx=30).pack(pady=(0, 10))
@@ -469,8 +473,8 @@ class Company:
             print(er.with_traceback())
             messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
         finally:
-            self.card_cursor.close()
-            self.card_database.close()
+            self.card_database.close_card_cursor()
+            self.card_database.close_card_database()
 
     def additional_information_window(self, profile_window=Child_window, client_area_window=Child_window):
         add_info_win = Child_window(profile_window.root, "Доп. информация о клиенте", 400, 200, 800, 350, "icon/add_info.ico")
@@ -628,12 +632,12 @@ class Company:
                 messagebox.showwarning("Ошибка", "Не корректный в вод данных")
             else:
                 try:
-                    self.card_database = sqlite3.connect("databases/cards.db")
-                    self.card_cursor = self.card_database.cursor()
+                    self.card_database.set_card_database(sqlite3.connect("databases/cards.db"))
+                    self.card_database.set_card_cursor(self.card_database.get_card_database().cursor())
                     self.database = sqlite3.connect("databases/clients.db")
                     self.cursor = self.database.cursor()
-                    self.card_cursor.execute("SELECT balanse FROM users_cards WHERE number_card = ?", [int(number_card.get())])
-                    if not self.card_cursor.fetchone():
+                    self.card_database.get_card_cursor().execute("SELECT balanse FROM users_cards WHERE number_card = ?", [int(number_card.get())])
+                    if not self.card_database.get_card_cursor().fetchone():
                         messagebox.showwarning("Запрос не найден", "Карта с таким номером не найдена!")
                     else:
                         if messagebox.askokcancel("Важно", "Отменить операцию будет нельзя!"):
@@ -643,12 +647,14 @@ class Company:
                             self.user.set_credit_days(months.get())
                             self.user.set_sum_use_credit(sum_for_use_credit)
                             self.user.set_credit(float(summa.get()))
-                            self.card_cursor.execute("UPDATE users_cards SET balanse = balanse + ? WHERE number_card = ?", [float(summa.get()), int(number_card.get())])
+                            self.card_database.get_card_cursor().execute(
+                                "UPDATE users_cards SET balanse = balanse + ? WHERE number_card = ?", [float(summa.get()), int(number_card.get())]
+                            )
                             self.cursor.execute(
                                 "UPDATE users SET credit = ?, sum_use_credit = ?, credit_days = ? WHERE id = ?",
                                 [self.user.get_credit(), self.user.get_sum_use_credit(), months.get(), self.user.get_id()],
                             )
-                            self.card_database.commit()
+                            self.card_database.get_card_database().commit()
                             self.database.commit()
                             messagebox.showinfo("Операция завершенна", "Вы получили деньги на свою карту!")
                             self.close_win.simple_close_window(win)
@@ -656,8 +662,8 @@ class Company:
                     print(er.with_traceback())
                     messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
                 finally:
-                    self.card_cursor.close()
-                    self.card_database.close()
+                    self.card_database.close_card_cursor()
+                    self.card_database.close_card_database()
                     self.cursor.close()
                     self.database.close()
 
@@ -840,14 +846,16 @@ class Company:
                         self.cursor.execute("INSERT INTO users(first_name, last_name, email, password, phone, age) VALUES(?, ?, ?, md5(?), ?, ?)", values)
                         self.database.commit()
                         messagebox.showinfo("Успех", "Поздравляю вы зарегистрировались!")
-                        self.card_database = sqlite3.connect("databases/cards.db")
-                        self.card_cursor = self.card_database.cursor()
+                        self.card_database.set_card_database(sqlite3.connect("databases/cards.db"))
+                        self.card_database.set_card_cursor(self.card_database.get_card_database().cursor())
                         id = self.cursor.execute("SELECT id FROM users WHERE email = ?", [email.get()]).fetchone()[0]
-                        self.card_cursor.execute("INSERT INTO users_cards(number_card, password, balanse) VALUES(?, ?, ?)", [id, randint(1000, 10000), randint(15000, 70000)])
+                        self.card_database.get_card_cursor().execute(
+                            "INSERT INTO users_cards(number_card, password, balanse) VALUES(?, ?, ?)", [id, randint(1000, 10000), randint(15000, 70000)]
+                        )
                         self.data_user.clear([fname, lname, email, password, repeat_password, phone, age])
-                        self.card_database.commit()
-                        self.card_cursor.close()
-                        self.card_database.close()
+                        self.card_database.get_card_database().commit()
+                        self.card_database.close_card_cursor()
+                        self.card_database.close_card_database()
                     else:
                         messagebox.showerror("Предупреждение", "Такай номер телефона уже зарегистрирован!")
                 else:
@@ -860,3 +868,9 @@ class Company:
                 self.database.close()
         else:
             messagebox.showwarning("Данные", "Не все данные заполнены!")
+
+    def close_and_show_another_window(self, close, show, frame_clear=Entry):
+        if type(frame_clear) == Entry:
+            frame_clear.delete(0, END)
+        show.root.deiconify()
+        close.root.destroy()
