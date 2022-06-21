@@ -1,4 +1,5 @@
-class Client
+# class Client
+
 
 class Client:
     def __init__(self):
@@ -56,16 +57,16 @@ class Client:
 
     def get_credit_days(self):
         return self._credit_days
-    
+
     def get_regula_client(self):
         return self._regular_client
-    
+
     def get_number_card(self):
         return self._number_card
-    
+
     def get_password_card(self):
         return self._password_card
-    
+
     # set
     def set_id(self, user_id):
         self._id = user_id
@@ -108,10 +109,9 @@ class Client:
 
     def set_regula_client(self, yes_or_no):
         self._regular_client = yes_or_no
-        
+
     def set_number_card(self, number_card):
         self._number_card = number_card
-    
+
     def set_password_card(self, password_card):
         self._password_card = password_card
-        
