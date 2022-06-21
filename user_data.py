@@ -1,7 +1,7 @@
 import hashlib
 from tkinter import *
 
-
+# Class User_data
 class User_data:
     def __init__(self):
         pass

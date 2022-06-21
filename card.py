@@ -1,7 +1,6 @@
-from locale import strcoll
 import sqlite3
 
-
+#  Class Card
 class Card:
     def __init__(self, database=str, card_query=str):
         self.card_database = sqlite3.connect(database)

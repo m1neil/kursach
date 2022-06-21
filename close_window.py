@@ -3,7 +3,7 @@ from tkinter import messagebox
 from child_window import Child_window
 from window import Window
 
-
+# Class Close Window
 class Close_window:
     def __init__(self, main_win=Window):
         self.main_window = main_win

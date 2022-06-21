@@ -10,7 +10,7 @@ from user_data import User_data
 from card import Card
 import sqlite3
 
-
+# Class Company
 
 class Company:
     def __init__(self) -> None:
