@@ -14,7 +14,7 @@ class Company:
     def __init__(self) -> None:
         self.name = "Creditime"
         self.window = Window(self.name, 500, 500, 800, 250, "icon/creditime.ico", (True, True))
-        self.close_win = Close_window()
+        self.close_win = Close_window(self.window)
         self.database = sqlite3.connect("databases/clients.db")
         self.cursor = self.database.cursor()
         self.user = Client()
@@ -188,7 +188,7 @@ class Company:
         client_area_window = Child_window(self.window.root, "Пользовательский кабинет", 500, 500, 800, 250, "icon/user_profile.ico")
         client_area_window.root.protocol(
             "WM_DELETE_WINDOW",
-            lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть программу?"),
+            lambda this_window=client_area_window: self.close_win.exit(this_window, "Закрыть программу?"),
         )
         main_title_frame = Frame(client_area_window.root)
         main_title_frame.pack()
@@ -208,7 +208,7 @@ class Company:
             exit_account,
             text="Выйти из приложения",
             width=18,
-            command=lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть приложение?"),
+            command=lambda this_window=client_area_window: self.close_win.exit(this_window, "Закрыть приложение?"),
             font=("", 12),
         ).pack(side=LEFT)
 
@@ -332,7 +332,7 @@ class Company:
         profile = Child_window(client_area_window.root, "Пользовательский кабинет", 500, 500, 800, 250, "icon/user_profile.ico")
         profile.root.protocol(
             "WM_DELETE_WINDOW",
-            lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть программу?"),
+            lambda this_window=client_area_window: self.close_win.exit(this_window, "Закрыть программу?"),
         )
         if self.user.get_work_place() == None:
             if messagebox.askokcancel(profile.root, "Необходимо заполнить некотороые данные!"):
@@ -378,7 +378,7 @@ class Company:
         )
         Button(exit_this_win, text="Инфо. о карте", font=("", 12), command=lambda: self.info_about_card(profile)).pack(side=LEFT, padx=(5, 5), pady=(40, 15))
         Button(exit_this_win, text="Баланс на карте", font=("", 12), command=lambda: self.info_about_balanse_card(profile)).pack(padx=(5, 0), pady=(40, 15))
-        Button(profile.root, text="Выйти из аккаунта", font=("", 12), command=lambda: self.exit_account(profile, client_area_window)).pack()
+        Button(profile.root, text="Выйти из аккаунта", font=("", 12), command=lambda: self.close_win.exit_account(profile, client_area_window)).pack()
 
     # Balanse card
     def info_about_balanse_card(self, profile=Child_window):
@@ -522,7 +522,7 @@ class Company:
         aplly_credit = Child_window(client_area_window.root, "Оформление кредита", 500, 500, 800, 250, "icon/apply_credit.ico")
         aplly_credit.root.protocol(
             "WM_DELETE_WINDOW",
-            lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть программу?"),
+            lambda this_window=client_area_window: self.close_win.exit(this_window, "Закрыть программу?"),
         )
 
         if self.user.get_work_place() == "":
@@ -714,7 +714,7 @@ class Company:
     def registration(self):
         self.window.root.withdraw()
         regis = Child_window(self.window.root, "Регистрация", 500, 500, 800, 250, "icon/registration.ico")
-        regis.root.protocol("WM_DELETE_WINDOW", lambda this_window=regis: self.close_win.exit(this_window, self.window, "Закрыть программу?"))
+        regis.root.protocol("WM_DELETE_WINDOW", lambda this_window=regis: self.close_win.exit(this_window, "Закрыть программу?"))
         # Вернуться в меню
         Label(regis.root, text=f"Создание аккаунта в {self.name}", relief=RAISED, bd=3, font=("", 18), padx=10).place(
             relx=0.5,
@@ -855,11 +855,6 @@ class Company:
                 self.database.close()
         else:
             messagebox.showwarning("Данные", "Не все данные заполнены!")
-
-    def exit_account(self, profile=Child_window, client_area_window=Child_window):
-        self.close_win.simple_close_window(profile)
-        self.close_win.simple_close_window(client_area_window)
-        self.window.root.deiconify()
 
     def close_window(self, this_window, title, question):
         if messagebox.askyesno(title, question):
