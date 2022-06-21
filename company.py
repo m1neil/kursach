@@ -5,13 +5,16 @@ from tkinter.ttk import Combobox
 from tkinter import messagebox
 from child_window import Child_window
 from client import Client
+from close_window import Close_window
 import sqlite3
 import hashlib
+
 
 class Company:
     def __init__(self) -> None:
         self.name = "Creditime"
         self.window = Window(self.name, 500, 500, 800, 250, "icon/creditime.ico", (True, True))
+        self.close_win = Close_window()
         self.database = sqlite3.connect("databases/clients.db")
         self.cursor = self.database.cursor()
         self.user = Client()
@@ -46,22 +49,24 @@ class Company:
         self.card_database.commit()
         self.card_cursor.close()
         self.card_database.close()
-        
+
         self.credittime_money_db = sqlite3.connect("databases/creditTime.db")
         self.creditTime_cursor = self.credittime_money_db.cursor()
-        self.credittime_money_db.execute(f"""CREATE TABLE IF NOT EXISTS creditTime (
+        self.credittime_money_db.execute(
+            f"""CREATE TABLE IF NOT EXISTS creditTime (
             login VARCHAR,
             balanse FLOAT NOT NULL DEFAULT {randint(50000, 200000)}
-        )""")
+        )"""
+        )
         self.creditTime_cursor.execute("SELECT login FROM creditTime WHERE login = ?", ["admin"])
         if self.creditTime_cursor.fetchone() is None:
             self.creditTime_cursor.execute(f"INSERT INTO creditTime(login) VALUES(?)", ["admin"])
         self.credittime_money_db.commit()
         self.creditTime_cursor.close()
         self.credittime_money_db.close()
-        
+
         self.counter_show_info_about_credit = 0
-        
+
     # Start main cycle
     def run(self):
         self.main_win_fidgets()
@@ -110,7 +115,7 @@ class Company:
 
     # Check user data
     def check_input_data(self, input_phone_or_email=Entry, input_password=Entry, child_window=Child_window):
-        examination = False  
+        examination = False
         user_id = None
         if input_phone_or_email.get() != "":
             if input_password.get() != "":
@@ -183,7 +188,7 @@ class Company:
         client_area_window = Child_window(self.window.root, "Пользовательский кабинет", 500, 500, 800, 250, "icon/user_profile.ico")
         client_area_window.root.protocol(
             "WM_DELETE_WINDOW",
-            lambda this_window=client_area_window: self.exit(this_window, "Закрыть программу?"),
+            lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть программу?"),
         )
         main_title_frame = Frame(client_area_window.root)
         main_title_frame.pack()
@@ -199,8 +204,14 @@ class Company:
         Button(user_profile_frame, text="Профиль", width=18, font=("", 12), command=lambda: self.profile(client_area_window)).pack(side=LEFT, pady=(0, 5))
         Button(credit_frame, text="Кредитный отдел", width=18, command=lambda: self.apply_for_credit(client_area_window), font=("", 12)).pack(side=LEFT, pady=(0, 5))
         Button(return_credit, text="Вернуть кредит", width=18, command=lambda: self.return_credit(client_area_window), font=("", 12)).pack(side=LEFT, pady=(0, 5))
-        Button(exit_account, text="Выйти из приложения", width=18, command=lambda:self.exit(client_area_window, "Закрыть приложение?"), font=("", 12)).pack(side=LEFT)
-    
+        Button(
+            exit_account,
+            text="Выйти из приложения",
+            width=18,
+            command=lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть приложение?"),
+            font=("", 12),
+        ).pack(side=LEFT)
+
     # Return credit
     def return_credit(self, client_area_window=Child_window):
         if self.user.get_credit() == 0:
@@ -217,12 +228,17 @@ class Company:
             self.card_database = sqlite3.connect("databases/cards.db")
             self.card_cursor = self.card_database.cursor()
             Label(frame_main_title, text="Возврат кредита", relief=RAISED, bd=3, font=("", 18), padx=30).pack(pady=(30, 20))
-            Label(frame_return_credit, text=f"Вам нужно вернуть сумму занятого креда в размере: {self.user.get_credit()} грн.\n"
-                  +f"И также сумму за использование этого кредита в размере {self.user.get_sum_use_credit()} грн.\n"
-                  +f"Итоговая сумма - {self.user.get_credit() + self.user.get_sum_use_credit()} грн.\n"
-                  +f"Срок кредита - {self.user.get_credit_days()}\n", justify=LEFT, font=("", 11)).pack(pady=(0,0))
+            Label(
+                frame_return_credit,
+                text=f"Вам нужно вернуть сумму занятого креда в размере: {self.user.get_credit()} грн.\n"
+                + f"И также сумму за использование этого кредита в размере {self.user.get_sum_use_credit()} грн.\n"
+                + f"Итоговая сумма - {self.user.get_credit() + self.user.get_sum_use_credit()} грн.\n"
+                + f"Срок кредита - {self.user.get_credit_days()}\n",
+                justify=LEFT,
+                font=("", 11),
+            ).pack(pady=(0, 0))
             Button(frame_btn, text="Вернуть кредит", command=lambda: self.pay_credit(win_return_credit), font=("", 10)).pack(side=LEFT, padx=(0, 10))
-            Button(frame_btn, text="Инфо. о карет", command=lambda: self.info_about_card(win_return_credit), font=("", 10)).pack(padx=(10, 0)) 
+            Button(frame_btn, text="Инфо. о карет", command=lambda: self.info_about_card(win_return_credit), font=("", 10)).pack(padx=(10, 0))
         except sqlite3.Error as er:
             print(er.with_traceback())
             messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
@@ -230,7 +246,7 @@ class Company:
             self.card_cursor.close()
             self.card_database.close()
         win_return_credit.focus()
-    
+
     # Pay credit
     def pay_credit(self, win_return_credit=Child_window):
         win_pay_credit = Child_window(win_return_credit.root, "Оплата", 250, 220, 800, 350, "icon/credit.ico")
@@ -249,9 +265,9 @@ class Company:
         Label(frame_password_card, text=f"Пароль:", font=("", 10), padx=30).pack(pady=(0, 5))
         password_card = Entry(frame_password_card)
         password_card.pack(pady=(0, 10))
-        Button(win_pay_credit.root, text="Оплатить", font=("", 10), command=lambda:self.check_pay_credit(win_return_credit, win_pay_credit, number_card, password_card)).pack()
+        Button(win_pay_credit.root, text="Оплатить", font=("", 10), command=lambda: self.check_pay_credit(win_return_credit, win_pay_credit, number_card, password_card)).pack()
         win_pay_credit.focus()
-    
+
     # Loan payment verification
     def check_pay_credit(self, win_return_credit=Child_window, win_pay_credit=Child_window, number_card=Entry, password_card=Entry):
         if number_card.get() == "" or password_card.get() == "":
@@ -295,10 +311,10 @@ class Company:
                                 self.user.set_regula_client(1)
                                 if messagebox.showinfo("Успех", "Вы успешно вернули свой кредит!"):
                                     self.simple_close_window(win_return_credit)
-                                    self.simple_close_window(win_pay_credit)         
+                                    self.simple_close_window(win_pay_credit)
                             else:
                                 messagebox.showerror("Средства", "Не карте не достаточно средств для оплаты кредита!")
-                                return                              
+                                return
             except sqlite3.Error as er:
                 print(er.with_traceback())
                 messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
@@ -309,13 +325,14 @@ class Company:
                 self.card_database.close()
                 self.creditTime_cursor.close()
                 self.credittime_money_db.close()
+
     # User profile
     def profile(self, client_area_window=Child_window):
         client_area_window.root.withdraw()
         profile = Child_window(client_area_window.root, "Пользовательский кабинет", 500, 500, 800, 250, "icon/user_profile.ico")
         profile.root.protocol(
             "WM_DELETE_WINDOW",
-            lambda this_window=client_area_window: self.exit(this_window, "Закрыть программу?"),
+            lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть программу?"),
         )
         if self.user.get_work_place() == None:
             if messagebox.askokcancel(profile.root, "Необходимо заполнить некотороые данные!"):
@@ -361,7 +378,7 @@ class Company:
         )
         Button(exit_this_win, text="Инфо. о карте", font=("", 12), command=lambda: self.info_about_card(profile)).pack(side=LEFT, padx=(5, 5), pady=(40, 15))
         Button(exit_this_win, text="Баланс на карте", font=("", 12), command=lambda: self.info_about_balanse_card(profile)).pack(padx=(5, 0), pady=(40, 15))
-        Button(profile.root, text="Выйти из аккаунта", font=("", 12), command=lambda:self.exit_account(profile, client_area_window)).pack()
+        Button(profile.root, text="Выйти из аккаунта", font=("", 12), command=lambda: self.exit_account(profile, client_area_window)).pack()
 
     # Balanse card
     def info_about_balanse_card(self, profile=Child_window):
@@ -505,9 +522,9 @@ class Company:
         aplly_credit = Child_window(client_area_window.root, "Оформление кредита", 500, 500, 800, 250, "icon/apply_credit.ico")
         aplly_credit.root.protocol(
             "WM_DELETE_WINDOW",
-            lambda this_window=client_area_window: self.exit(this_window, "Закрыть программу?"),
+            lambda this_window=client_area_window: self.close_win.exit(this_window, self.window, "Закрыть программу?"),
         )
-        
+
         if self.user.get_work_place() == "":
             if messagebox.showwarning("Предпреждение", "Нету необходимых данных!\nЗаполните их в профиле"):
                 self.simple_close_window(aplly_credit)
@@ -541,7 +558,7 @@ class Company:
             Button(
                 aplly_credit.root, text="В личный кабинет", font=("", 12), command=lambda: self.close_and_show_another_window(aplly_credit, client_area_window, sum_credit)
             ).pack(padx=(5, 0), pady=(15, 0))
-            
+
         if self.counter_show_info_about_credit == 0:
             self.info_about_credit()
             self.counter_show_info_about_credit += 1
@@ -696,10 +713,7 @@ class Company:
     def registration(self):
         self.window.root.withdraw()
         regis = Child_window(self.window.root, "Регистрация", 500, 500, 800, 250, "icon/registration.ico")
-        regis.root.protocol(
-            "WM_DELETE_WINDOW",
-            lambda this_window=regis: self.exit(this_window, "Закрыть программу?"),
-        )
+        regis.root.protocol("WM_DELETE_WINDOW", lambda this_window=regis: self.close_win.exit(this_window, self.window, "Закрыть программу?"))
         # Вернуться в меню
         Label(regis.root, text=f"Создание аккаунта в {self.name}", relief=RAISED, bd=3, font=("", 18), padx=10).place(
             relx=0.5,
@@ -742,15 +756,13 @@ class Company:
             command=lambda this_window=regis: self.close_window(this_window, title, question),
         ).place(relx=0.63, rely=0.58, anchor=CENTER)
 
-    
-    def clear(self, entries = []):
+    def clear(self, entries=[]):
         if type(entries[0] == Entry):
             for data in entries:
                 data.delete(0, END)
         else:
             print("Error type")
-            
-      
+
     def get_info(self, fname=Entry, lname=Entry, email=Entry, password=Entry, repeat_password=Entry, phone=Entry, age=Spinbox):
         if fname.get() != "" and lname.get() != "" and email.get() != "" and password.get() != "" and repeat_password.get() != "" and phone.get() != "" and age.get() != "":
             # check email========================
@@ -843,11 +855,6 @@ class Company:
         else:
             messagebox.showwarning("Данные", "Не все данные заполнены!")
 
-    def exit(self, this_window, question):
-        if messagebox.askokcancel("Закрытие окна", question):
-            this_window.root.destroy()
-            self.window.root.destroy()  # Потом убрать возможно!
-            
     def exit_account(self, profile=Child_window, client_area_window=Child_window):
         self.simple_close_window(profile)
         self.simple_close_window(client_area_window)
@@ -860,7 +867,7 @@ class Company:
 
     def simple_close_window(self, this_window):
         this_window.root.destroy()
-        
+
     def close_and_show_another_window(self, close, show, frame_clear=Entry):
         if type(frame_clear) == Entry:
             frame_clear.delete(0, END)
@@ -890,7 +897,7 @@ class Company:
             return True
         else:
             return False
-    
+
     def is_number(self, str):
         try:
             float(str)
@@ -904,7 +911,6 @@ class Company:
             return True
         except ValueError:
             return False
-    
-    
+
     def md5sum(self, value):
         return hashlib.md5(value.encode()).hexdigest()
