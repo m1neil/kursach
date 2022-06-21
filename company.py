@@ -12,6 +12,7 @@ import sqlite3
 
 # Class Company
 
+
 class Company:
     def __init__(self) -> None:
         self.name = "Creditime"
@@ -850,7 +851,7 @@ class Company:
                         self.card_database.set_card_cursor(self.card_database.get_card_database().cursor())
                         id = self.cursor.execute("SELECT id FROM users WHERE email = ?", [email.get()]).fetchone()[0]
                         self.card_database.get_card_cursor().execute(
-                            "INSERT INTO users_cards(number_card, password, balanse) VALUES(?, ?, ?)", [id, randint(1000, 10000), randint(15000, 70000)]
+                            "INSERT INTO users_cards(number_card, password, balanse) VALUES(?, ?, ?)", [id, randint(1000, 10000), randint(25000, 70000)]
                         )
                         self.data_user.clear([fname, lname, email, password, repeat_password, phone, age])
                         self.card_database.get_card_database().commit()
