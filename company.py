@@ -6,6 +6,7 @@ from tkinter import messagebox
 from child_window import Child_window
 from client import Client
 from close_window import Close_window
+from user_data import User_data
 import sqlite3
 import hashlib
 
@@ -15,6 +16,7 @@ class Company:
         self.name = "Creditime"
         self.window = Window(self.name, 500, 500, 800, 250, "icon/creditime.ico", (True, True))
         self.close_win = Close_window(self.window)
+        self.data_user = User_data()
         self.database = sqlite3.connect("databases/clients.db")
         self.cursor = self.database.cursor()
         self.user = Client()
@@ -122,7 +124,7 @@ class Company:
                 try:
                     self.database = sqlite3.connect("databases/clients.db")
                     self.cursor = self.database.cursor()
-                    self.database.create_function("md5", 1, self.md5sum)
+                    self.database.create_function("md5", 1, self.data_user.md5sum)
                     email = ""
                     phone = ""
                     if input_phone_or_email.get()[0] == "+":
@@ -280,7 +282,12 @@ class Company:
                 self.card_cursor = self.card_database.cursor()
                 self.credittime_money_db = sqlite3.connect("databases/creditTime.db")
                 self.creditTime_cursor = self.credittime_money_db.cursor()
-                if not self.is_number(number_card.get()) or not self.is_int(number_card.get()) or not self.is_number(password_card.get()) or not self.is_int(password_card.get()):
+                if (
+                    not self.data_user.is_number(number_card.get())
+                    or not self.data_user.is_int(number_card.get())
+                    or not self.data_user.is_number(password_card.get())
+                    or not self.data_user.is_int(password_card.get())
+                ):
                     messagebox.showwarning("Предупреждение", "Не корректные данные")
                 else:
                     self.card_cursor.execute("SELECT number_card FROM users_cards WHERE number_card = ?", [int(number_card.get())])
@@ -417,7 +424,12 @@ class Company:
             try:
                 self.card_database = sqlite3.connect("databases/cards.db")
                 self.card_cursor = self.card_database.cursor()
-                if not self.is_number(number_card.get()) or not self.is_int(number_card.get()) or not self.is_number(password_card.get()) or not self.is_int(password_card.get()):
+                if (
+                    not self.data_user.is_number(number_card.get())
+                    or not self.data_user.is_int(number_card.get())
+                    or not self.data_user.is_number(password_card.get())
+                    or not self.data_user.is_int(password_card.get())
+                ):
                     messagebox.showwarning("Предупреждение", "Не корректные данные")
                 else:
                     self.card_cursor.execute("SELECT number_card FROM users_cards WHERE number_card = ?", [int(number_card.get())])
@@ -493,7 +505,7 @@ class Company:
         if work_place == "" or work_position == "" or salary == "":
             messagebox.showwarning("Предупреждение", "Не все данные введенный")
         else:
-            if not self.is_number(salary):
+            if not self.data_user.is_number(salary):
                 messagebox.showwarning("Ошбика", "Не корректный тип данных")
             elif float(salary) < 6500:
                 messagebox.showwarning("Не корректные данные", "Минимальная зарпалата в Украине 6500 грн.")
@@ -574,7 +586,7 @@ class Company:
                 messagebox.showwarning("Предупреждение", "Пустое поле!")
                 return
             else:
-                if not self.is_number(sum_credit.get()):
+                if not self.data_user.is_number(sum_credit.get()):
                     messagebox.showwarning("Предупреждение", "Не корректный в вод данных!")
                     return
                 else:
@@ -612,7 +624,7 @@ class Company:
         if number_card.get() == "":
             messagebox.showwarning("Предупреждение", "Пустое поле!")
         else:
-            if not self.is_number(number_card.get()) or not self.is_int(number_card.get()):
+            if not self.data_user.is_number(number_card.get()) or not self.data_user.is_int(number_card.get()):
                 messagebox.showwarning("Ошибка", "Не корректный в вод данных")
             else:
                 try:
@@ -660,7 +672,7 @@ class Company:
 
     def count_sum_credit(self, sum_credit=Entry, month=Combobox, aplly_credit=Child_window):
         if sum_credit.get() != "":
-            if not self.is_number(sum_credit.get()):
+            if not self.data_user.is_number(sum_credit.get()):
                 messagebox.showerror("Ошибка", "Не корректный тип данных")
                 return
             else:
@@ -743,7 +755,7 @@ class Company:
         Label(regis.root, text="Возраст").place(relx=0.315, rely=0.50, anchor=CENTER)
         age = Spinbox(regis.root, from_=18, to=60, width=4)
         age.place(relx=0.414, rely=0.50, anchor=CENTER)
-        Button(regis.root, text="Очистить поля", command=lambda: self.clear([first_name, last_name, email, password, repeat_password, phone, age])).place(
+        Button(regis.root, text="Очистить поля", command=lambda: self.data_user.clear([first_name, last_name, email, password, repeat_password, phone, age])).place(
             relx=0.55, rely=0.50, anchor=CENTER
         )
         Button(regis.root, text="Зарегистрироваться", command=lambda: self.get_info(first_name, last_name, email, password, repeat_password, phone, age)).place(
@@ -756,13 +768,6 @@ class Company:
             text="Вернуться в меню",
             command=lambda this_window=regis: self.close_win.close_window(this_window, title, question),
         ).place(relx=0.63, rely=0.58, anchor=CENTER)
-
-    def clear(self, entries=[]):
-        if type(entries[0] == Entry):
-            for data in entries:
-                data.delete(0, END)
-        else:
-            print("Error type")
 
     def get_info(self, fname=Entry, lname=Entry, email=Entry, password=Entry, repeat_password=Entry, phone=Entry, age=Spinbox):
         if fname.get() != "" and lname.get() != "" and email.get() != "" and password.get() != "" and repeat_password.get() != "" and phone.get() != "" and age.get() != "":
@@ -777,7 +782,7 @@ class Company:
                 else:
                     if email_str[i] == "@":
                         symbol = email_str[:i]
-                        if self.check_email(symbol, unValidSumbol) == True:
+                        if self.data_user.check_email(symbol, unValidSumbol) == True:
                             messagebox.showwarning("Символы", "Могут использоваться символы (a-z), цифры (0-9) и точку.")
                             return
                         if len(symbol) < 6:
@@ -786,7 +791,7 @@ class Company:
                         elif len(symbol) >= 8:
                             alphaValid = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                             alphaValid += alphaValid.lower()
-                            if self.check_email(symbol, alphaValid) == False:
+                            if self.data_user.check_email(symbol, alphaValid) == False:
                                 break
                         if email_str[i + 1 :] == "gmail.com" or email_str[i + 1 :] == "mail.ru" or email_str[i + 1 :] == "yandex.ru":
                             correct_email = True
@@ -807,7 +812,7 @@ class Company:
             # ====================================
             # check phone
             validSymbols = "1234567890"
-            if not self.check_phone(phone.get(), validSymbols):
+            if not self.data_user.check_phone(phone.get(), validSymbols):
                 messagebox.showwarning("Телефон", "Не корректный номер телефона")
                 return
             # =====================================
@@ -825,7 +830,7 @@ class Company:
             try:
                 self.database = sqlite3.connect("databases/clients.db")
                 self.cursor = self.database.cursor()
-                self.database.create_function("md5", 1, self.md5sum)
+                self.database.create_function("md5", 1, self.data_user.md5sum)
                 self.cursor.execute(f"SELECT email FROM users WHERE email = '{email.get()}'")
                 if self.cursor.fetchone() is None:
                     user_phone = "+380" + phone.get()
@@ -839,7 +844,7 @@ class Company:
                         self.card_cursor = self.card_database.cursor()
                         id = self.cursor.execute("SELECT id FROM users WHERE email = ?", [email.get()]).fetchone()[0]
                         self.card_cursor.execute("INSERT INTO users_cards(number_card, password, balanse) VALUES(?, ?, ?)", [id, randint(1000, 10000), randint(15000, 70000)])
-                        self.clear([fname, lname, email, password, repeat_password, phone, age])
+                        self.data_user.clear([fname, lname, email, password, repeat_password, phone, age])
                         self.card_database.commit()
                         self.card_cursor.close()
                         self.card_database.close()
@@ -855,44 +860,3 @@ class Company:
                 self.database.close()
         else:
             messagebox.showwarning("Данные", "Не все данные заполнены!")
-
-    def check_phone(self, testS=str, validSymbols=str()):
-        flag = True
-        if len(testS) < 9 or len(testS) > 9:
-            return False
-        for val in testS:
-            if not (val in validSymbols):
-                flag = False
-                break
-        if flag == True:
-            return True
-        else:
-            return False
-
-    def check_email(self, testS=str, validSymbols=str()):
-        flag = False
-        for val in testS:
-            if val in validSymbols:
-                flag = True
-                break
-        if flag == True:
-            return True
-        else:
-            return False
-
-    def is_number(self, str):
-        try:
-            float(str)
-            return True
-        except ValueError:
-            return False
-
-    def is_int(self, str):
-        try:
-            int(str)
-            return True
-        except ValueError:
-            return False
-
-    def md5sum(self, value):
-        return hashlib.md5(value.encode()).hexdigest()
