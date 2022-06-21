@@ -156,7 +156,7 @@ class Company:
             messagebox.showwarning("Предупреждение", "Введите логин!")
 
         if examination == True:
-            self.simple_close_window(child_window)
+            self.close_win.simple_close_window(child_window)
             self.client_area(user_id)
 
     # Client Area
@@ -310,8 +310,8 @@ class Company:
                                 self.user.set_credit_days(0)
                                 self.user.set_regula_client(1)
                                 if messagebox.showinfo("Успех", "Вы успешно вернули свой кредит!"):
-                                    self.simple_close_window(win_return_credit)
-                                    self.simple_close_window(win_pay_credit)
+                                    self.close_win.simple_close_window(win_return_credit)
+                                    self.close_win.simple_close_window(win_pay_credit)
                             else:
                                 messagebox.showerror("Средства", "Не карте не достаточно средств для оплаты кредита!")
                                 return
@@ -407,7 +407,7 @@ class Company:
         label_balanse = Label(frame_balanse_card, text=f"Баланс: {balanse}")
         label_balanse.pack(pady=(5, 5))
         Button(info_about_balanse_card.root, text="Посмотреть баланс", command=lambda: self.show_balanse(label_balanse, number_card, password_card)).pack(pady=(0, 10))
-        Button(info_about_balanse_card.root, text="Закрыть окно", command=lambda: self.simple_close_window(info_about_balanse_card)).pack()
+        Button(info_about_balanse_card.root, text="Закрыть окно", command=lambda: self.close_win.simple_close_window(info_about_balanse_card)).pack()
 
     # Show info about balance on card
     def show_balanse(self, label_balanse=Label, number_card=Entry, password_card=Entry):
@@ -452,7 +452,7 @@ class Company:
             Label(win_info_card.root, text="Карта", relief=RAISED, bd=3, font=("", 14), padx=30).pack(pady=(20, 15))  # Заголовок
             Label(win_info_card.root, text=f"Номер карты: {number_card}", font=("", 10), padx=30).pack(pady=(0, 5))
             Label(win_info_card.root, text=f"Пароль: {password_card}", font=("", 10), padx=30).pack(pady=(0, 10))
-            Button(win_info_card.root, text="ОК", command=lambda: self.simple_close_window(win_info_card)).pack()
+            Button(win_info_card.root, text="ОК", command=lambda: self.close_win.simple_close_window(win_info_card)).pack()
         except sqlite3.Error as er:
             print(er.with_traceback())
             messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
@@ -509,7 +509,7 @@ class Company:
                     )
                     self.database.commit()
                     messagebox.showinfo("Успех", "Мы успешно занесли данные.\n Снова зайдите в профиль!")
-                    self.simple_close_window(win)
+                    self.close_win.simple_close_window(win)
                     client_area_window.root.deiconify()
                 except sqlite3.Error as er:
                     print(er.with_traceback())
@@ -527,7 +527,7 @@ class Company:
 
         if self.user.get_work_place() == "":
             if messagebox.showwarning("Предпреждение", "Нету необходимых данных!\nЗаполните их в профиле"):
-                self.simple_close_window(aplly_credit)
+                self.close_win.simple_close_window(aplly_credit)
         else:
             client_area_window.root.withdraw()
             frame_main_title = Frame(aplly_credit.root)
@@ -639,7 +639,7 @@ class Company:
                             self.card_database.commit()
                             self.database.commit()
                             messagebox.showinfo("Операция завершенна", "Вы получили деньги на свою карту!")
-                            self.simple_close_window(win)
+                            self.close_win.simple_close_window(win)
                 except sqlite3.Error as er:
                     print(er.with_traceback())
                     messagebox.showerror("Ошибка!", "При работе с базой данный случилась не предвиденная ошибка!")
@@ -694,8 +694,9 @@ class Company:
                         font=("", 12),
                         text=f"Сумма кредита без учёта процентов: {summa} грн.\n" + f"Кредит выдается на: {month.get()}\n" + f"Ежедневная процентная ставка: 2%",
                     ).pack()
-                    percent_one_day = (summa * 2) / 100
-                    sum_for_use_credit = percent_one_day * how_months * 30
+                    percent_one_day = (summa * 0.5) / 100
+                    sum_for_use_credit = percent_one_day * (how_months * 30)
+
                     total_sum = summa + sum_for_use_credit
                     Label(
                         frame_percent_for_one_day,
@@ -705,7 +706,7 @@ class Company:
                         + f"Процент за использование кредита за {month.get()} составляет {sum_for_use_credit} грн.\n"
                         + f"С учётом использования кредина нужно будет вернуть {total_sum} грн.",
                     ).pack()
-                    Button(total_about_credit.root, text="ОК", command=lambda: self.simple_close_window(total_about_credit)).pack(pady=(10, 0))
+                    Button(total_about_credit.root, text="ОК", command=lambda: self.close_win.simple_close_window(total_about_credit)).pack(pady=(10, 0))
         else:
             messagebox.showwarning("Предупреждение", "Пустое поле!")
             return
@@ -856,17 +857,14 @@ class Company:
             messagebox.showwarning("Данные", "Не все данные заполнены!")
 
     def exit_account(self, profile=Child_window, client_area_window=Child_window):
-        self.simple_close_window(profile)
-        self.simple_close_window(client_area_window)
+        self.close_win.simple_close_window(profile)
+        self.close_win.simple_close_window(client_area_window)
         self.window.root.deiconify()
 
     def close_window(self, this_window, title, question):
         if messagebox.askyesno(title, question):
             self.window.root.deiconify()
             this_window.root.destroy()
-
-    def simple_close_window(self, this_window):
-        this_window.root.destroy()
 
     def close_and_show_another_window(self, close, show, frame_clear=Entry):
         if type(frame_clear) == Entry:

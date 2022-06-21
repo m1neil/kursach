@@ -11,4 +11,7 @@ class Close_window:
     def exit(self, this_window=Child_window, main_window=Window, question=str):
         if messagebox.askokcancel("Закрытие окна", question):
             this_window.root.destroy()
-            main_window.root.destroy()  # Потом убрать возможно!
+            main_window.root.destroy()
+
+    def simple_close_window(self, this_window=Child_window):
+        this_window.root.destroy()
