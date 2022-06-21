@@ -9,7 +9,7 @@ from close_window import Close_window
 from user_data import User_data
 from card import Card
 import sqlite3
-import hashlib
+
 
 
 class Company:
